@@ -1,0 +1,167 @@
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@5.3.4
+
+# Define reusable commands
+commands:
+  validate-datadog-config:
+    description: "Validate Datadog configuration and playbook"
+    steps:
+      - run:
+          name: Install requirements
+          command: |
+            pip install ansible ansible-lint boto3 botocore
+            ansible-galaxy collection install amazon.aws
+      - aws-cli/setup
+      - run:
+          name: Validate playbook syntax
+          command: ansible-playbook playbooks/deploy_datadog.yml --syntax-check -e "datadog_env=dev"
+      - run:
+          name: Validate inventory
+          command: ansible-inventory --graph
+
+  setup-ssh-key:
+    description: "Configure SSH private key for Ansible"
+    steps:
+      - run:
+          name: Setup SSH private key
+          command: |
+            mkdir -p ~/.ssh
+            echo "${ANSIBLE_PRIVATE_KEY}" > datadog.pem
+            echo "${ANSIBLE_PRIVATE_KEY}" | base64 -d > datadog.pem
+            chmod 400 datadog.pem
+            echo "StrictHostKeyChecking no" >> ~/.ssh/config
+            export ANSIBLE_PRIVATE_KEY_FILE=./datadog.pem
+
+  deploy-datadog:
+    description: "Deploy Datadog agent to specified environment"
+    parameters:
+      environment:
+        type: string
+        default: "dev"
+      datadog_api_key:
+        type: string
+        default: ""
+      datadog_site:
+        type: string
+        default: "datadoghq.com"
+    steps:
+      - run:
+          name: Install requirements
+          command: |
+            pip install ansible boto3 botocore
+            ansible-galaxy collection install amazon.aws
+      - aws-cli/setup
+      - setup-ssh-key
+      - run:
+          name: Deploy Datadog agent
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "main" ]; then
+              DATADOG_ENV="prod"
+            elif [ "${CIRCLE_BRANCH}" == "qa" ]; then
+              DATADOG_ENV="qa"
+            elif [ "${CIRCLE_BRANCH}" == "dev" ]; then
+              DATADOG_ENV="dev"
+            else
+              DATADOG_ENV="dev"  # Default to dev for other branches
+            fi
+            # First run with --check to validate changes
+            export ANSIBLE_PRIVATE_KEY_FILE=./datadog.pem
+
+            ansible-playbook playbooks/deploy_datadog.yml \
+              -e ""datadog_env=${DATADOG_ENV}" " \
+              -e "datadog_api_key=<< parameters.datadog_api_key >>" \
+              -e "datadog_site=<< parameters.datadog_site >>"
+          no_output_timeout: 30m
+
+# Define jobs
+jobs:
+  validate:
+    docker:
+      - image: cimg/python:3.9
+    steps:
+      - checkout
+      - validate-datadog-config
+
+  hold-prod:
+    type: approval
+    description: "Manual approval required for production deployment"
+
+  deploy-dev:
+    docker:
+      - image: cimg/python:3.9
+    environment:
+      DD_API_KEY_DEV: ${DD_API_KEY_DEV}
+    steps:
+      - checkout
+      - deploy-datadog:
+          environment: "dev"
+          datadog_api_key: ${DD_API_KEY_DEV}
+          datadog_site: "datadoghq.com"
+
+  deploy-qa:
+    docker:
+      - image: cimg/python:3.9
+    environment:
+      DD_API_KEY_QA: ${DD_API_KEY_QA}
+    steps:
+      - checkout
+      - deploy-datadog:
+          environment: "qa"
+          datadog_api_key: ${DD_API_KEY_QA}
+          datadog_site: "datadoghq.com"
+
+  deploy-prod:
+    docker:
+      - image: cimg/python:3.9
+    environment:
+      DD_API_KEY_PROD: ${DD_API_KEY_PROD}
+    steps:
+      - checkout
+      - deploy-datadog:
+          environment: "prod"
+          datadog_api_key: ${DD_API_KEY_PROD}
+          datadog_site: "datadoghq.com"
+
+# Define workflows
+workflows:
+  version: 2
+  datadog-deployment:
+    jobs:
+      # Validation job that runs on all branches and PRs
+      - validate:
+          context: Datadog
+
+      # Development environment deployment
+      - deploy-dev:
+          requires:
+            - validate
+          filters:
+            branches:
+              only: dev
+          context: Datadog
+
+      # QA environment deployment
+      - deploy-qa:
+          requires:
+            - validate
+          filters:
+            branches:
+              only: qa
+          context: Datadog
+
+      # Production environment deployment
+      - hold-prod:
+          filters:
+            branches:
+              only: main
+          context: Datadog
+      - deploy-prod:
+          requires:
+            - validate
+            - hold-prod
+          filters:
+            branches:
+              only: main
+          context: Datadog＀

@@ -57,22 +57,12 @@ commands:
       - run:
           name: Deploy Datadog agent
           command: |
-            if [ "${CIRCLE_BRANCH}" == "main" ]; then
-              DATADOG_ENV="prod"
-            elif [ "${CIRCLE_BRANCH}" == "qa" ]; then
-              DATADOG_ENV="qa"
-            elif [ "${CIRCLE_BRANCH}" == "dev" ]; then
-              DATADOG_ENV="dev"
-            else
-              DATADOG_ENV="dev"  # Default to dev for other branches
-            fi
-            # First run with --check to validate changes
             export ANSIBLE_PRIVATE_KEY_FILE=./datadog.pem
 
             ansible-playbook playbooks/deploy_datadog.yml \
-              -e ""datadog_env=${DATADOG_ENV}" " \
+              -e "datadog_env=${environment}" \
               -e "datadog_api_key=${DD_API_KEY_DEV}" \
-              -e "datadog_site=datadoghq.com"
+              -e "datadog_site=${datadog_site}" \
           no_output_timeout: 30m
 
 # Define jobs
@@ -91,37 +81,28 @@ jobs:
   deploy-dev:
     docker:
       - image: cimg/python:3.9
-    environment:
-      DD_API_KEY_DEV: ${DD_API_KEY_DEV}
     steps:
       - checkout
       - deploy-datadog:
           environment: "dev"
-          datadog_api_key: ${DD_API_KEY_DEV}
           datadog_site: "datadoghq.com"
 
   deploy-qa:
     docker:
       - image: cimg/python:3.9
-    environment:
-      DD_API_KEY_QA: ${DD_API_KEY_QA}
     steps:
       - checkout
       - deploy-datadog:
           environment: "qa"
-          datadog_api_key: ${DD_API_KEY_QA}
           datadog_site: "datadoghq.com"
 
   deploy-prod:
     docker:
       - image: cimg/python:3.9
-    environment:
-      DD_API_KEY_PROD: ${DD_API_KEY_PROD}
     steps:
       - checkout
       - deploy-datadog:
           environment: "prod"
-          datadog_api_key: ${DD_API_KEY_PROD}
           datadog_site: "datadoghq.com"
 
 # Define workflows

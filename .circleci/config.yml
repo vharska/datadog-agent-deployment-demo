@@ -1,8 +1,6 @@
 version: 2.1
-
 orbs:
   aws-cli: circleci/aws-cli@5.3.4
-
 # Define reusable commands
 commands:
   validate-datadog-config:
@@ -20,7 +18,6 @@ commands:
       - run:
           name: Validate inventory
           command: ansible-inventory --graph
-
   setup-ssh-key:
     description: "Configure SSH private key for Ansible"
     steps:
@@ -28,21 +25,17 @@ commands:
           name: Setup SSH private key
           command: |
             mkdir -p ~/.ssh
-            echo "${ANSIBLE_PRIVATE_KEY}" > datadog.pem
+            # Pick one approach - either direct or base64 decoded
             echo "${ANSIBLE_PRIVATE_KEY}" | base64 -d > datadog.pem
             chmod 400 datadog.pem
             echo "StrictHostKeyChecking no" >> ~/.ssh/config
             export ANSIBLE_PRIVATE_KEY_FILE=./datadog.pem
-
   deploy-datadog:
     description: "Deploy Datadog agent to specified environment"
     parameters:
       environment:
         type: string
         default: "dev"
-      datadog_api_key:
-        type: string
-        default: ""
       datadog_site:
         type: string
         default: "datadoghq.com"
@@ -58,13 +51,11 @@ commands:
           name: Deploy Datadog agent
           command: |
             export ANSIBLE_PRIVATE_KEY_FILE=./datadog.pem
-
             ansible-playbook playbooks/deploy_datadog.yml \
-              -e "datadog_env=${environment}" \
+              -e "datadog_env=<< parameters.environment >>" \
               -e "datadog_api_key=${DD_API_KEY_DEV}" \
-              -e "datadog_site=${datadog_site}" \
+              -e "datadog_site=<< parameters.datadog_site >>"
           no_output_timeout: 30m
-
 # Define jobs
 jobs:
   validate:
@@ -73,11 +64,9 @@ jobs:
     steps:
       - checkout
       - validate-datadog-config
-
   hold-prod:
     type: approval
     description: "Manual approval required for production deployment"
-
   deploy-dev:
     docker:
       - image: cimg/python:3.9
@@ -86,7 +75,6 @@ jobs:
       - deploy-datadog:
           environment: "dev"
           datadog_site: "datadoghq.com"
-
   deploy-qa:
     docker:
       - image: cimg/python:3.9
@@ -95,7 +83,6 @@ jobs:
       - deploy-datadog:
           environment: "qa"
           datadog_site: "datadoghq.com"
-
   deploy-prod:
     docker:
       - image: cimg/python:3.9
@@ -104,7 +91,6 @@ jobs:
       - deploy-datadog:
           environment: "prod"
           datadog_site: "datadoghq.com"
-
 # Define workflows
 workflows:
   version: 2
@@ -113,7 +99,6 @@ workflows:
       # Validation job that runs on all branches and PRs
       - validate:
           context: Datadog
-
       # Development environment deployment
       - deploy-dev:
           requires:
@@ -122,7 +107,6 @@ workflows:
             branches:
               only: dev
           context: Datadog
-
       # QA environment deployment
       - deploy-qa:
           requires:
@@ -131,7 +115,6 @@ workflows:
             branches:
               only: qa
           context: Datadog
-
       # Production environment deployment
       - hold-prod:
           filters:
@@ -145,4 +128,4 @@ workflows:
           filters:
             branches:
               only: main
-          context: Datadog
+          context: Datadogﰀ

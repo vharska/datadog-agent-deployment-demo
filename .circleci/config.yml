@@ -36,16 +36,6 @@ commands:
 
   deploy-datadog:
     description: "Deploy Datadog agent to specified environment"
-    parameters:
-      environment:
-        type: string
-        default: "dev"
-      datadog_api_key:
-        type: string
-        default: ""
-      datadog_site:
-        type: string
-        default: "datadoghq.com"
     steps:
       - run:
           name: Install requirements
@@ -81,29 +71,33 @@ jobs:
   deploy-dev:
     docker:
       - image: cimg/python:3.9
+    environment:
+      environment: "dev"
+      datadog_site: "datadoghq.com"
     steps:
       - checkout
       - deploy-datadog:
-          environment: "dev"
-          datadog_site: "datadoghq.com"
+
 
   deploy-qa:
     docker:
       - image: cimg/python:3.9
+    environment:
+      environment: "qa"
+      datadog_site: "datadoghq.com"
     steps:
       - checkout
       - deploy-datadog:
-          environment: "qa"
-          datadog_site: "datadoghq.com"
 
   deploy-prod:
     docker:
       - image: cimg/python:3.9
+    environment:
+      environment: "qa"
+      datadog_site: "datadoghq.com"
     steps:
       - checkout
       - deploy-datadog:
-          environment: "prod"
-          datadog_site: "datadoghq.com"
 
 # Define workflows
 workflows:

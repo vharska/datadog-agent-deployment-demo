@@ -70,7 +70,7 @@ commands:
             export ANSIBLE_PRIVATE_KEY_FILE=./datadog.pem
 
             ansible-playbook playbooks/deploy_datadog.yml \
-              -e ""datadog_env=${DATADOG_ENV}" " \
+              -e "datadog_env=${DATADOG_ENV}" \
               -e "datadog_api_key=${DD_API_KEY_DEV}" \
               -e "datadog_site=datadoghq.com"
           no_output_timeout: 30m
@@ -91,37 +91,28 @@ jobs:
   deploy-dev:
     docker:
       - image: cimg/python:3.9
-    environment:
-      DD_API_KEY_DEV: ${DD_API_KEY_DEV}
     steps:
       - checkout
       - deploy-datadog:
           environment: "dev"
-          datadog_api_key: ${DD_API_KEY_DEV}
           datadog_site: "datadoghq.com"
 
   deploy-qa:
     docker:
       - image: cimg/python:3.9
-    environment:
-      DD_API_KEY_QA: ${DD_API_KEY_QA}
     steps:
       - checkout
       - deploy-datadog:
           environment: "qa"
-          datadog_api_key: ${DD_API_KEY_QA}
           datadog_site: "datadoghq.com"
 
   deploy-prod:
     docker:
       - image: cimg/python:3.9
-    environment:
-      DD_API_KEY_PROD: ${DD_API_KEY_PROD}
     steps:
       - checkout
       - deploy-datadog:
           environment: "prod"
-          datadog_api_key: ${DD_API_KEY_PROD}
           datadog_site: "datadoghq.com"
 
 # Define workflows

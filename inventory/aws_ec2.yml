@@ -6,7 +6,7 @@ regions:
 filters:
   tag:Environment:
     - dev
-    - qa
+    - test
     - prod
 
 keyed_groups:

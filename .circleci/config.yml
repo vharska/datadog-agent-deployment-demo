@@ -75,13 +75,13 @@ jobs:
       - deploy-datadog:
           environment: "dev"
           datadog_site: "datadoghq.com"
-  deploy-qa:
+  deploy-test:
     docker:
       - image: cimg/python:3.9
     steps:
       - checkout
       - deploy-datadog:
-          environment: "qa"
+          environment: "test"
           datadog_site: "datadoghq.com"
   deploy-prod:
     docker:
@@ -105,15 +105,19 @@ workflows:
             - validate
           filters:
             branches:
-              only: dev
+              only: 
+              - dev
+              - main
           context: Datadog
-      # QA environment deployment
-      - deploy-qa:
+      # Test environment deployment
+      - deploy-test:
           requires:
             - validate
           filters:
             branches:
-              only: qa
+              only: 
+              - test
+              - main
           context: Datadog
       # Production environment deployment
       - hold-prod:

@@ -16,8 +16,8 @@
     - name: Validate environment variables
       assert:
         that:
-          - datadog_env is defined and datadog_env in ['dev', 'qa', 'prod']
-        msg: "datadog_env must be defined and must be one of: dev, qa, prod"
+          - datadog_env is defined and datadog_env in ['dev', 'test', 'prod']
+        msg: "datadog_env must be defined and must be one of: dev, test, prod"
       when: inventory_hostname == 'localhost'
 
 - name: Deploy Datadog Agent

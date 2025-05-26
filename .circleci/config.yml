@@ -130,4 +130,4 @@ workflows:
           filters:
             branches:
               only: main
-          context: Datadogﰀ
+          context: Datadog

@@ -12,7 +12,7 @@ filters:
 keyed_groups:
   # Create groups based on Environment tag
   - key: tags.Environment
-    prefix: env
+    # prefix: env
     separator: ""
 
 compose:

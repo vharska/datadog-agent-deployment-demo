@@ -1,6 +1,6 @@
 ---
-# QA environment specific settings
-datadog_env: "qa"
+# Test environment specific settings
+datadog_env: "Test"
 datadog_checks:
   process:
     init_config:
@@ -9,9 +9,9 @@ datadog_checks:
         search_string: ['ssh', 'sshd']
         exact_match: false
 
-# Additional qa environment tags
+# Additional test environment tags
 datadog_extra_tags:
-  - "environment:qa"
+  - "environment:test"
   - "tier:testing"
 
 # Basic log collection settings
@@ -22,4 +22,4 @@ datadog_logs_config:
     service: "datadog-agent"
     source: "datadog"
     tags:
-      - "env:qa"
+      - "env:Test"

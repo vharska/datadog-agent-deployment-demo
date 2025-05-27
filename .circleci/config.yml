@@ -107,6 +107,7 @@ workflows:
             branches:
               only: 
               - dev
+              - main
           context: Datadog
       # Test environment deployment
       - deploy-test:
@@ -116,6 +117,7 @@ workflows:
             branches:
               only: 
               - test
+              - main
           context: Datadog
       # Production environment deployment
       - hold-prod:

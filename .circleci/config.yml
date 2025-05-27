@@ -107,6 +107,7 @@ workflows:
             branches:
               only: 
               - dev
+              - develop
               - main
           context: Datadog
       # Test environment deployment
@@ -117,13 +118,16 @@ workflows:
             branches:
               only: 
               - test
+              - testing
               - main
           context: Datadog
       # Production environment deployment
       - hold-prod:
           filters:
             branches:
-              only: main
+              only: 
+              - main
+              - master
           context: Datadog
       - deploy-prod:
           requires:
